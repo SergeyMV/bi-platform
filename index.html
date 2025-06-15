@@ -5,11 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BI-платформа под ключ</title>
   <style>
-    body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; background: #f9fafb; color: #1f2937; }
-    header { background: #4f46e5; color: white; padding: 60px 20px; text-align: center; animation: fadeIn 1.2s ease-in-out; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow-x: hidden; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f9fafb; color: #1f2937; position: relative; z-index: 1; }
+
+    canvas#spider-bg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+    }
+
+    header { background: #4f46e5; color: white; padding: 60px 20px; text-align: center; animation: fadeIn 1.2s ease-in-out; position: relative; z-index: 1; }
     header h1 { margin: 0 0 10px; font-size: 2.5em; }
     header p { font-size: 1.2em; }
-    section { padding: 50px 20px; max-width: 900px; margin: 0 auto; animation: fadeInUp 1s ease-out; }
+
+    section { padding: 50px 20px; max-width: 900px; margin: 0 auto; animation: fadeInUp 1s ease-out; position: relative; z-index: 1; }
     h2 { color: #4f46e5; margin-top: 40px; }
     ul { padding-left: 20px; line-height: 1.8em; }
     .cta { text-align: center; margin-top: 50px; }
@@ -23,7 +33,8 @@
       background: #007ab8;
       transform: scale(1.03);
     }
-    footer { text-align: center; padding: 30px; background: #f3f4f6; color: #6b7280; margin-top: 50px; }
+    footer { text-align: center; padding: 30px; background: #f3f4f6; color: #6b7280; margin-top: 50px; position: relative; z-index: 1; }
+
     form { max-width: 550px; margin: 40px auto 0; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 2px 20px rgba(0,0,0,0.05); position: relative; }
     input, textarea { width: 100%; padding: 12px; margin-bottom: 20px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1em; }
     button { background: #4f46e5; color: white; padding: 12px 25px; border: none; border-radius: 6px; font-size: 1em; cursor: pointer; width: 100%; }
@@ -70,10 +81,85 @@
           });
         });
       }
+
+      const canvas = document.getElementById("spider-bg");
+      const ctx = canvas.getContext("2d");
+      let width, height;
+      let points = [];
+
+      function resizeCanvas() {
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = width;
+        canvas.height = height;
+      }
+
+      function createPoints(num) {
+        points = [];
+        for (let i = 0; i < num; i++) {
+          points.push({
+            x: Math.random() * width,
+            y: Math.random() * height,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: (Math.random() - 0.5) * 0.5
+          });
+        }
+      }
+
+      function drawPoints(mouseX, mouseY) {
+        ctx.clearRect(0, 0, width, height);
+        for (let i = 0; i < points.length; i++) {
+          let p = points[i];
+          p.x += p.vx;
+          p.y += p.vy;
+
+          if (p.x < 0 || p.x > width) p.vx *= -1;
+          if (p.y < 0 || p.y > height) p.vy *= -1;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+          ctx.fillStyle = '#c7d2fe';
+          ctx.fill();
+
+          for (let j = i + 1; j < points.length; j++) {
+            let q = points[j];
+            const dist = Math.hypot(p.x - q.x, p.y - q.y);
+            const mouseDist = Math.hypot(p.x - mouseX, p.y - mouseY);
+            if (dist < 120) {
+              ctx.strokeStyle = `rgba(99,102,241,${1 - dist / 120})`;
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(p.x, p.y);
+              ctx.lineTo(q.x, q.y);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      let mouse = { x: -1000, y: -1000 };
+      window.addEventListener('mousemove', e => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      function animate() {
+        drawPoints(mouse.x, mouse.y);
+        requestAnimationFrame(animate);
+      }
+
+      resizeCanvas();
+      createPoints(80);
+      animate();
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+        createPoints(80);
+      });
     });
   </script>
 </head>
 <body>
+  <canvas id="spider-bg"></canvas>
   <header>
     <h1>Онлайн-аналитика для бизнеса под ключ</h1>
     <p>Единая BI-платформа с дашбордами, хранилищем и загрузкой данных</p>
